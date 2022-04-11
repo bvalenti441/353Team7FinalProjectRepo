@@ -131,6 +131,33 @@ app.use('/new', (req, res) => {
 	    } ); 
 })
 
+// endpoint to update a facility
+app.use('/update', (req, res) => {
+    let name = req.query.name;
+    let payload = {
+        '$set': {
+            'id': req.body.id,
+            'name': req.body.name,
+            'address': req.body.address,
+            'insurance': req.body.insurance,
+            'phone': req.body.phone,
+            'admitting': req.body.admitting
+        }
+    }
+
+    Facility.findOneAndUpdate(name, payload, (err, original) => {
+        if (err) {
+            res.json({'status': err});
+        }
+        else if (!original) {
+            res.json({'status': 'facility not found'});
+        }
+        else {
+            res.json({'status': 'success'});
+        }
+    });
+});
+
 
 
 // endpoint for accessing data via the web api
