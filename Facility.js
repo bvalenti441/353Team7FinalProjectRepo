@@ -10,7 +10,7 @@ var facilitySchema = new Schema({
     address: String,
     insurance: [String],
     phone: Number,
-    admitting: {type: Boolean, required: true, unique: false}
+    admitting: Boolean
     });
 
 module.exports = mongoose.model('Facility', facilitySchema);
