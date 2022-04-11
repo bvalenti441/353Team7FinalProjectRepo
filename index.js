@@ -9,6 +9,9 @@ var Facility = require('./Facility.js');
 const req = require('express/lib/request');
 
 var facilities = new Map();
+facilities.set(1234, new Facility('Haverford Medical Association', 1234, '937 E Haverford Rd, Haverford, PA 19041', ['Medicare', 'Horizon Blue Cross Blue Shield'], '(610) 527-8844', true));
+facilities.set(5678, new Facility('AFC Urgent Care - Havertown', 5678, '115 W Eagle Rd, Havertown, PA 19083', ['Progressive', 'Geico'], '(484) 452-9400', true));
+facilities.set(0987, new Facility('Morris Infirmary (Health Services)', 0987, 'Walton Ln, Ardmore, PA 19003', [], '(610) 896-1089', false));
 
 /***************************************/
 // endpoint for creating a new person
@@ -17,10 +20,11 @@ app.use('/create', (req, res) => {
 	// construct the Facility from the form data which is in the request body
 	var newFacility = new Facility ({
 		name: req.body.name,
+		id: Date.now(),
 		address: req.body.address,
 		insurance: req.body.insurance,
 		phone: req.body.phone,
-		admitting: req.body.admitting,
+		admitting: req.body.admitting
 	    });
 
 	// save the person to the database
@@ -130,33 +134,6 @@ app.use('/new', (req, res) => {
 		}
 	    } ); 
 })
-
-// endpoint to update a facility
-app.use('/update', (req, res) => {
-    let name = req.query.name;
-    let payload = {
-        '$set': {
-            'id': req.body.id,
-            'name': req.body.name,
-            'address': req.body.address,
-            'insurance': req.body.insurance,
-            'phone': req.body.phone,
-            'admitting': req.body.admitting
-        }
-    }
-
-    Facility.findOneAndUpdate(name, payload, (err, original) => {
-        if (err) {
-            res.json({'status': err});
-        }
-        else if (!original) {
-            res.json({'status': 'facility not found'});
-        }
-        else {
-            res.json({'status': 'success'});
-        }
-    });
-});
 
 
 
