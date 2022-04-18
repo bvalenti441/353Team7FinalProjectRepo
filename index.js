@@ -8,15 +8,26 @@ app.use(bodyParser.urlencoded({ extended: true }));
 var Facility = require('./Facility.js');
 const req = require('express/lib/request');
 
-var facilities = new Map();
-facilities.set(1234, new Facility('Haverford Medical Association', 1234, '937 E Haverford Rd, Haverford, PA 19041', ['Medicare', 'Horizon Blue Cross Blue Shield'], '(610) 527-8844', true));
-facilities.set(5678, new Facility('AFC Urgent Care - Havertown', 5678, '115 W Eagle Rd, Havertown, PA 19083', ['Progressive', 'Geico'], '(484) 452-9400', true));
-facilities.set(0987, new Facility('Morris Infirmary (Health Services)', 0987, 'Walton Ln, Ardmore, PA 19003', [], '(610) 896-1089', false));
+/*
+Mock Data
+set(1234, new Facility('Haverford Medical Association', 1234, '937 E Haverford Rd, Haverford, PA 19041', ['Medicare', 'Horizon Blue Cross Blue Shield'], '(610) 527-8844', true));
+set(5678, new Facility('AFC Urgent Care - Havertown', 5678, '115 W Eagle Rd, Havertown, PA 19083', ['Progressive', 'Geico'], '(484) 452-9400', true));
+set(0987, new Facility('Morris Infirmary (Health Services)', 0987, 'Walton Ln, Ardmore, PA 19003', [], '(610) 896-1089', false));
+*/
 
 /***************************************/
-// endpoint for creating a new person
-// this is the action of the "create new person" form
+app.use('/Public', express.static('Public'));
+
+// endpoint for creating a new facility
+// this is the action of the "create new facility" form
+
 app.use('/create', (req, res) => {
+	admitBool = undefined;
+	if(req.body.admitting == 'yes'){
+		admitBool = true;
+	} else if(req.body.admit == 'no'){
+		admitBool = false;
+	}
 	// construct the Facility from the form data which is in the request body
 	var newFacility = new Facility ({
 		name: req.body.name,
@@ -24,7 +35,7 @@ app.use('/create', (req, res) => {
 		address: req.body.address,
 		insurance: req.body.insurance,
 		phone: req.body.phone,
-		admitting: req.body.admitting
+		admitting: admitBool,
 	    });
 
 	// save the person to the database
@@ -36,7 +47,7 @@ app.use('/create', (req, res) => {
 		    res.end();
 		}
 		else {
-		    // display the "successfull created" message
+		    // display the "successfully created" message
 		    res.send('successfully added ' + newFacility.name + ' to the database');
 		}
 	    }); 
@@ -135,7 +146,32 @@ app.use('/new', (req, res) => {
 	    } ); 
 })
 
+// endpoint to update a facility
+app.use('/update', (req, res) => {
+    let name = req.query.name;
+    let payload = {
+        '$set': {
+            'id': req.body.id,
+            'name': req.body.name,
+            'address': req.body.address,
+            'insurance': req.body.insurance,
+            'phone': req.body.phone,
+            'admitting': req.body.admitting
+        }
+    }
 
+    Facility.findOneAndUpdate(name, payload, (err, original) => {
+        if (err) {
+            res.json({'status': err});
+        }
+        else if (!original) {
+            res.json({'status': 'facility not found'});
+        }
+        else {
+            res.json({'status': 'success'});
+        }
+    });
+});
 
 // endpoint for accessing data via the web api
 // to use this, make a request for /api to get an array of all Person objects
@@ -161,13 +197,13 @@ app.use('/api', (req, res) => {
 		else if (facilities.length == 1 ) {
 		    var facility = facilities[0];
 		    // send back a single JSON object
-		    res.json( { "name" : facility.name , "address" : facility.address } );
+		    res.json( { 'name' : facility.name , 'ID' : facility.id, 'address' : facility.address, 'insurance' : facility.insurance, 'phone' : facility.phone, 'admitting' : facility.admitting } );
 		}
 		else {
 		    // construct an array out of the result
 		    var returnArray = [];
 		    facilities.forEach( (facility) => {
-			    returnArray.push( { "name" : facility.name, "address" : facility.address } );
+			    returnArray.push( { 'name' : facility.name , 'ID' : facility.id, 'address' : facility.address, 'insurance' : facility.insurance, 'phone' : facility.phone, 'admitting' : facility.admitting } );
 			});
 		    // send it back as JSON Array
 		    res.json(returnArray); 
@@ -178,8 +214,6 @@ app.use('/api', (req, res) => {
 
 
 /*************************************************/
-
-app.use('/Public', express.static('Public'));
 
 app.use('/', (req, res) => { res.redirect('/Public/facilityform.html'); } );
 
