@@ -86,7 +86,7 @@ app.use('/allUsers', (req, res) => {
 				// show all the people
 				users.forEach( (user) => {
 			    	res.write('<li>');
-			    	res.write('Username: ' + user.username + '; Password Hash: ' + user.password + '; Location: ' + user.location);
+			    	res.write('Username: ' + user.username + '; Location: ' + user.location);
 			    	// this creates a link to the /delete endpoint
 			    	res.write(" <a href=\"/deleteUser?username=" + user.username + "\">[Delete]</a>");
 			    	res.write('</li>');
@@ -95,7 +95,7 @@ app.use('/allUsers', (req, res) => {
 			res.end();
 		    }
 		}
-	    }).sort({ 'username': 'asc' }); // this sorts them BEFORE rendering the results
+	    }).sort({ 'location': 'asc' }); // this sorts them BEFORE rendering the results
 });
 
 app.use('/deleteUser', (req, res) => {
