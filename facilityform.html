@@ -1,7 +1,7 @@
 <html>
   <body>
     <h2>Create facility</h2>
-    <form action="/create" method="post">
+    <form action="/createFac" method="post">
       <p>Name: <input name="name">
       <p>Address: <input name="address">
       <p>Accepted Insurance: <input name="insurance">
@@ -11,12 +11,32 @@
     </form>
     
     <h2>Update existing facility</h2>
-    <form action="/update" method="post">
+    <form action="/updateFac" method="post">
       <p>Name: <input name="name">
+      <p>ID: <input name="id">
       <p>Address: <input name="address">
       <p>Accepted Insurance: <input name="insurance">
       <p>Phone Number: <input name="phone">
       <p>Currently admitting patients (yes/no): <input name="admitting">
       <p><input type="submit" value="Submit form!">
+    </form>
+
+    <h2>List all facilities</h2>
+    <form action="/allFacs" method="post">
+      <p><input type="submit" value="List!">
+    </form>
+
+    <h2>Create user</h2>
+    <form action="/createUser" method="post">
+      <p>Username: <input name="username">
+      <p>Password: <input name="password">
+      <p>Location: <input name="location">
+      <p><input type="submit" value="Submit form!">
+    </form>
+
+    <h2>List all users</h2>
+    <form action="/allUsers" method="post">
+      <p><input type="submit" value="List!">
+    </form>
   </body>
 </html>

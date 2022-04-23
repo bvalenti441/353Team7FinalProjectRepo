@@ -6,7 +6,9 @@ var app = express();
 var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 var Facility = require('./Facility.js');
+var User = require('./User.js');
 const req = require('express/lib/request');
+const crypto = require('crypto');
 
 /*
 Mock Data
@@ -21,7 +23,121 @@ app.use('/Public', express.static('Public'));
 // endpoint for creating a new facility
 // this is the action of the "create new facility" form
 
-app.use('/create', (req, res) => {
+app.use('/createUser', (req, res) => {
+
+	hash = crypto.getHashes();
+
+	// construct the User from the http request body from mobile app
+	var newUser = new User ({
+		username: req.body.username,
+    	password: crypto.createHash('sha1').update(req.body.password).digest('hex'),
+		location: req.body.location
+		});
+
+	// save the person to the database
+	newUser.save( (err) => { 
+		if (err) {
+			res.type('html').status(200);
+			res.write('uh oh: ' + err);
+			console.log(err);
+			res.end();
+		}
+		else {
+			// display the "successfully created" message
+			res.send('successfully added ' + newUser.username + ' to the database');
+		}
+		}); 
+	});
+
+app.use('/login', (req, res) => {
+	
+	hash = crypto.getHashes();
+
+	var filter = { 'username' : req.query.username, 
+				   'password' : crypto.createHash('sha1').update(req.query.password).digest('hex')
+				   };
+	
+	User.findOne( filter, (err, facility) => {
+		if (err) 
+			res.json( { 'status' : err } );
+		else if (!facility) 
+		   res.json( { 'status' : 'no user' } ); 
+		else 
+			res.json( { 'status' : 'valid user' } ); 
+	});
+});
+
+app.use('/allUsers', (req, res) => {
+    User.find( {}, (err, users) => {
+		if (err) {
+		    res.type('html').status(200);
+		    console.log('uh oh' + err);
+		    res.write(err);
+		} else {
+		    if (users.length == 0) {
+				res.type('html').status(200);
+				res.write('There are no users.');
+				res.end();
+				return;
+		    } else {
+				res.type('html').status(200);
+				res.write('Here are the users in the database:');
+				res.write('<ul>');
+				// show all the people
+				users.forEach( (user) => {
+			    	res.write('<li>');
+			    	res.write('Username: ' + user.username + '; Password Hash: ' + user.password + '; Location: ' + user.location);
+			    	// this creates a link to the /delete endpoint
+			    	res.write(" <a href=\"/deleteUser?username=" + user.username + "\">[Delete]</a>");
+			    	res.write('</li>');
+			});
+			res.write('</ul>');
+			res.end();
+		    }
+		}
+	    }).sort({ 'username': 'asc' }); // this sorts them BEFORE rendering the results
+});
+
+app.use('/deleteUser', (req, res) => {
+
+	var filter = { 'username' : req.query.username };
+
+	User.findOneAndDelete( filter, (err, user) => {
+		if (err) { 
+		   res.json( { 'status' : err } ); 
+		   res.redirect('/allUsers');
+		}
+		else if (!user) {
+		   res.json( { 'status' : 'no user' } ); 
+		}
+		else {
+		   res.json( { 'status' : 'success' } ); 
+		}
+	});
+});
+
+app.use('/newUser', (req, res) => {
+	
+	hash = crypto.getHashes();
+
+	var newUser = new User ({
+		username: req.query.username,
+    	password: crypto.createHash('sha1').update(req.query.password).digest('hex'),
+		location: req.query.location
+		});
+
+	newUser.save( (err) => { 
+		if (err) {
+			console.log(err);
+			res.json( { 'status' : 'error' });
+		} else {
+			// display the "successfull created" message
+			res.json( { 'status' : 'success' } );
+		}
+	}); 
+})
+
+app.use('/createFac', (req, res) => {
 	admitBool = undefined;
 	if(req.body.admitting == 'yes'){
 		admitBool = true;
@@ -54,7 +170,7 @@ app.use('/create', (req, res) => {
     });
 
 // endpoint for showing all the facilities, sorted alphabetically by name
-app.use('/all', (req, res) => {
+app.use('/allFacs', (req, res) => {
     Facility.find( {}, (err, facilities) => {
 		if (err) {
 		    res.type('html').status(200);
@@ -77,7 +193,7 @@ app.use('/all', (req, res) => {
 			    res.write('<li>');
 			    res.write('ID: ' + facility.id + '; name: ' + facility.name + '; admitting: ' + facility.admitting);
 			    // this creates a link to the /delete endpoint
-			    res.write(" <a href=\"/delete?name=" + facility.name + "\">[Delete]</a>");
+			    res.write(" <a href=\"/deleteFac?name=" + facility.name + "\">[Delete]</a>");
 			    res.write('</li>');
 			
 			});
@@ -88,14 +204,14 @@ app.use('/all', (req, res) => {
 	    }).sort({ 'name': 'asc' }); // this sorts them BEFORE rendering the results
 });
 
-app.use('/delete', (req, res) => {
+app.use('/deleteFac', (req, res) => {
 
 	var filter = { 'name' : req.query.name };
 
 	Facility.findOneAndDelete( filter, (err, facility) => {
 		if (err) { 
 		   res.json( { 'status' : err } ); 
-		   res.redirect('/all');
+		   res.redirect('/allFacs');
 		}
 		else if (!facility) {
 		   res.json( { 'status' : 'no facility' } ); 
@@ -106,14 +222,14 @@ app.use('/delete', (req, res) => {
 	});
 });
 
-app.use('/find', (req, res) => {
+app.use('/findFac', (req, res) => {
 
 	var filter = { 'name' : req.query.name };
 
 	Facility.findOne( filter, (err, facility) => {
 		if (err) { 
 		   res.json( { 'status' : err } ); 
-		   res.redirect('/all');
+		   res.redirect('/allFacs');
 		}
 		else if (!facility) {
 		   res.json( { 'status' : 'no facility' } ); 
@@ -124,11 +240,12 @@ app.use('/find', (req, res) => {
 	});
 });
 
-app.use('/new', (req, res) => {
+app.use('/newFac', (req, res) => {
 
 	var newFacility = new Facility ({
 		name: req.query.name,
-		address: req.query.name,
+		id: Date.now(),
+		address: req.query.address,
 		insurance: req.query.insurance,
 		phone: req.query.phone,
 		admitting: req.query.admitting
@@ -143,24 +260,21 @@ app.use('/new', (req, res) => {
 		    // display the "successfull created" message
 		    res.json( { 'status' : 'success' } );
 		}
-	    } ); 
+	}); 
 })
 
 // endpoint to update a facility
-app.use('/update', (req, res) => {
-    let name = req.query.name;
-    let payload = {
-        '$set': {
-            'id': req.body.id,
-            'name': req.body.name,
-            'address': req.body.address,
-            'insurance': req.body.insurance,
-            'phone': req.body.phone,
-            'admitting': req.body.admitting
-        }
+app.use('/updateFac', (req, res) => {
+    const filter = { 'id' : req.body.id };
+    const payload = {
+        'name': req.body.name,
+        'address': req.body.address,
+        'insurance': req.body.insurance,
+        'phone': req.body.phone,
+        'admitting': req.body.admitting
     }
 
-    Facility.findOneAndUpdate(name, payload, (err, original) => {
+    Facility.findOneAndUpdate(filter, payload, (err, original) => {
         if (err) {
             res.json({'status': err});
         }
@@ -174,7 +288,7 @@ app.use('/update', (req, res) => {
 });
 
 // endpoint for accessing data via the web api
-// to use this, make a request for /api to get an array of all Person objects
+// to use this, make a request for /api to get an array of all Facility objects
 // or /api?name=[whatever] to get a single object
 app.use('/api', (req, res) => {
 
